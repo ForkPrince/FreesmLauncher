@@ -89,6 +89,10 @@ in
       ++ lib.optional (lib.versionAtLeast qtbase.version "6" && isLinux) qtwayland;
 
     postBuild = ''
+      if [ -d "$out/Applications/FreesmLauncher.app/Contents/MacOS" ]; then
+        mkdir -p "$out/bin"
+        ln -s "$out/Applications/FreesmLauncher.app/Contents/MacOS/freesmlauncher" "$out/bin/freesmlauncher"
+      fi
       wrapQtAppsHook
     '';
 

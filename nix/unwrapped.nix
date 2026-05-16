@@ -71,7 +71,6 @@ in
           qrencode
           zlib
         ]
-        ++ lib.optionals isDarwin [darwin.apple_sdk.frameworks.Cocoa]
         ++ lib.optionals gamemodeSupport [gamemode];
 
       cmakeFlags =
