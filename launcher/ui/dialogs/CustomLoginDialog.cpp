@@ -24,36 +24,6 @@
 #include "UrlUtils.h"
 #include "net/Download.h"
 
-namespace {
-QUrl formUrl(QString userInput, QString& errorString)
-{
-    errorString.clear();
-
-    userInput = userInput.trimmed();
-
-    bool httpScheme = userInput.startsWith("http://", Qt::CaseInsensitive);
-    bool httpsScheme = userInput.startsWith("https://", Qt::CaseInsensitive);
-
-    if (userInput.contains("://") && !httpsScheme && !httpScheme) {
-        errorString = QObject::tr("Invalid URL scheme");
-        return {};
-    }
-
-    QUrl deducedUrl = QUrl::fromUserInput(userInput);
-
-    if (!deducedUrl.isValid() || deducedUrl.isLocalFile() || deducedUrl.host().isEmpty()) {
-        errorString = QObject::tr("Invalid URL");
-        return {};
-    }
-
-    if (!httpsScheme && !httpScheme) {
-        deducedUrl.setScheme("https");
-    }
-
-    return deducedUrl;
-}
-}  // namespace
-
 CustomLoginDialog::CustomLoginDialog(QWidget* parent) : QDialog(parent), ui(new Ui::CustomLoginDialog)
 {
     ui->setupUi(this);
@@ -82,7 +52,7 @@ void CustomLoginDialog::accept()
 {
     QString errorString;
 
-    const QUrl url(formUrl(ui->authUrlTextBox->text(), errorString));
+    const QUrl url(UrlUtils::httpFromUserInput(ui->authUrlTextBox->text(), &errorString));
     if (!url.isValid()) {
         emit onTaskFailed(errorString);
         return;
@@ -215,8 +185,12 @@ void CustomLoginDialog::onTaskProgress(qint64 current, qint64 total)
 
 void CustomLoginDialog::onAuthUrlTextBoxChanged()
 {
-    ui->loginUrlTextBox->setText("/authserver/authenticate");
-    ui->refreshUrlTextBox->setText("/authserver/refresh");
+    if (ui->loginUrlTextBox->text().isEmpty()) {
+        ui->loginUrlTextBox->setText("/authserver/authenticate");
+    }
+    if (ui->refreshUrlTextBox->text().isEmpty()) {
+        ui->refreshUrlTextBox->setText("/authserver/refresh");
+    }
 }
 
 // Public interface
@@ -224,6 +198,19 @@ MinecraftAccountPtr CustomLoginDialog::newAccount(QWidget* parent, QString msg)
 {
     CustomLoginDialog dlg(parent);
     dlg.ui->label->setText(msg);
+    if (dlg.exec() == QDialog::Accepted) {
+        return dlg.m_account;
+    }
+    return nullptr;
+}
+
+MinecraftAccountPtr CustomLoginDialog::reauthenticateAccount(QWidget* parent, const MinecraftAccount& account, QString message)
+{
+    CustomLoginDialog dlg(parent);
+    dlg.ui->label->setText(message);
+    dlg.ui->authUrlTextBox->setText(account.accountData()->authUrl);
+    dlg.ui->loginUrlTextBox->setText(account.accountData()->loginUrl);
+    dlg.ui->refreshUrlTextBox->setText(account.accountData()->refreshUrl);
     if (dlg.exec() == QDialog::Accepted) {
         return dlg.m_account;
     }

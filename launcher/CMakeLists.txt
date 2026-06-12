@@ -223,6 +223,8 @@ set(MINECRAFT_SOURCES
     minecraft/auth/AccountData.h
     minecraft/auth/AccountList.cpp
     minecraft/auth/AccountList.h
+    minecraft/auth/AccountIdentifier.cpp
+    minecraft/auth/AccountIdentifier.h
     minecraft/auth/AuthSession.cpp
     minecraft/auth/AuthSession.h
     minecraft/auth/AuthStep.h
@@ -1619,11 +1621,19 @@ endif()
 # Set basic compiler warning/error flags for all targets
 get_property(Launcher_TARGETS DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY BUILDSYSTEM_TARGETS)
 foreach(target ${Launcher_TARGETS})
-    message(STATUS "Enabling all warnings as errors for target '${target}'")
+    if (NOT Launcher_DISABLE_WERROR)
+        message(STATUS "Enabling all warnings as errors for target '${target}'")
+    endif()
     if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
-        target_compile_options(${target} PRIVATE /W4 /WX /permissive-)
+        target_compile_options(${target} PRIVATE /W4 /permissive-)
+        if (NOT Launcher_DISABLE_WERROR)
+            target_compile_options(${target} PRIVATE /WX)
+        endif()
     else()
-        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic -Werror)
+        target_compile_options(${target} PRIVATE -Wall -Wextra -Wpedantic)
+        if (NOT Launcher_DISABLE_WERROR)
+            target_compile_options(${target} PRIVATE -Werror)
+        endif()
     endif()
 endforeach()
 
@@ -1632,8 +1642,10 @@ if (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
     target_compile_options(Launcher_logic PRIVATE /wd4100) # C4100 - unused parameter
     target_compile_options(${Launcher_Name} PRIVATE /wd4100) # C4100 - unused parameter
 else()
-    target_compile_options(Launcher_logic PRIVATE -Wno-unused-parameter -Wno-missing-field-initializers)
-    target_compile_options(${Launcher_Name} PRIVATE -Wno-unused-parameter -Wno-missing-field-initializers)
+    # sfinae-incomplete is a new GCC warning and triggers in Qt headers
+    # no-unknown-warning-option so that compilers that don't have sfinae-incomplete don't error
+    target_compile_options(Launcher_logic PRIVATE -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-warning-option -Wno-sfinae-incomplete)
+    target_compile_options(${Launcher_Name} PRIVATE -Wno-unused-parameter -Wno-missing-field-initializers -Wno-unknown-warning-option -Wno-sfinae-incomplete)
 endif()
 
 #### The bundle mess! ####

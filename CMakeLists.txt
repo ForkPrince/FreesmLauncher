@@ -181,7 +181,7 @@ set(Launcher_LEGACY_FMLLIBS_BASE_URL "https://files.prismlauncher.org/fmllibs/" 
 ######## Set version numbers ########
 set(Launcher_VERSION_MAJOR 2)
 set(Launcher_VERSION_MINOR 2)
-set(Launcher_VERSION_PATCH 0)
+set(Launcher_VERSION_PATCH 1)
 set(Launcher_VERSION_CODENAME "Maple")
 
 set(Launcher_VERSION_NAME "${Launcher_VERSION_MAJOR}.${Launcher_VERSION_MINOR}.${Launcher_VERSION_PATCH}")
@@ -503,6 +503,8 @@ add_subdirectory(libraries/murmur2) # Hash for usage with the CurseForge API
 add_subdirectory(libraries/qdcss) # css parser
 
 ############################### Built Artifacts ###############################
+
+option(Launcher_DISABLE_WERROR "Disable -Werror (/WX) for launcher build" OFF)
 
 add_subdirectory(buildconfig)
 
